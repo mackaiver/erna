@@ -2,7 +2,11 @@ import pandas as pd
 import click
 from sklearn import ensemble
 from sklearn import cross_validation
+from sklearn import linear_model
 from sklearn2pmml import sklearn2pmml
+
+import matplotlib
+matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
@@ -43,7 +47,9 @@ training_variables = ['ConcCore', 'Concentration_onePixel', 'Concentration_twoPi
 @click.option('--n_cv','-c', default=5,  help='Number of CV folds to perform')
 @click.option('--bins','-b', default=100,  help='number of bins in ocrrelation plot.')
 @click.option('--log','-l', is_flag=True,  help='Flags whether a log function should be applied to the true energie and size before training stuff.')
-def main(path, out, n_trees, n_jobs,n_sample, n_cv,  bins, log):
+@click.option('--max_depth','-d', default=None, type=click.INT, help='Maximum depth of the trees in the forest.')
+@click.option('--save','-sm', is_flag=True,  help='Flags whether model should be save to pmml.')
+def main(path, out, n_trees, n_jobs,n_sample, n_cv,  bins, log, max_depth, save):
     '''
     Train a RF regressor and write the model to OUT in pmml format.
     '''
@@ -64,30 +70,30 @@ def main(path, out, n_trees, n_jobs,n_sample, n_cv,  bins, log):
         df_target = df_target.apply(np.log10)
         df_train['Size'] = df_train['Size'].apply(np.log10)
 
-    rf = ensemble.RandomForestRegressor(n_estimators=n_trees,max_features="sqrt", oob_score=True, n_jobs=n_jobs)
-
+    rf = ensemble.ExtraTreesRegressor(n_estimators=n_trees,max_features="sqrt", n_jobs=n_jobs, max_depth=max_depth)
+    # rf = linear_model.Ridge()
     print("Training classifier in a {} fold CV...".format(n_cv))
     scores = cross_validation.cross_val_score(rf, df_train, df_target, cv=n_cv)
 
     print("Cross validated R^2 scores: {}".format(scores))
-    print("Mean R^2 score : %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+    print("Mean R^2 score : %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
 
     print("Building new model on complete data set...")
-    rf = ensemble.RandomForestRegressor(n_estimators=n_trees,max_features="sqrt", oob_score=True, n_jobs=n_jobs)
+    # rf = ensemble.ExtraTreesRegressor(n_estimators=n_trees,max_features="sqrt", oob_score=True, n_jobs=n_jobs, max_depth=max_depth)
     rf.fit(df_train, df_target)
     print("Score on complete data set: {}".format(rf.score(df_train, df_target)))
-
-    importances = pd.DataFrame(rf.feature_importances_, index=df_train.columns, columns=['importance'])
-    importances = importances.sort_values(by='importance', ascending=True)
-    print('Plotting importances to importances.pdf')
-    ax = importances.plot(
-        kind='barh',
-        color='#2775d0'
-    )
-    ax.set_xlabel(u'feature importance')
-    ax.get_yaxis().grid(None)
-    plt.tight_layout()
-    plt.savefig('importances.pdf')
+    #
+    # importances = pd.DataFrame(rf.feature_importances_, index=df_train.columns, columns=['importance'])
+    # importances = importances.sort_values(by='importance', ascending=True)
+    # print('Plotting importances to importances.pdf')
+    # ax = importances.plot(
+    #     kind='barh',
+    #     color='#2775d0'
+    # )
+    # ax.set_xlabel(u'feature importance')
+    # ax.get_yaxis().grid(None)
+    # plt.tight_layout()
+    # plt.savefig('importances.pdf')
 
     print('Plotting correlation to correlation.pdf')
     fig = plt.figure()
@@ -111,12 +117,13 @@ def main(path, out, n_trees, n_jobs,n_sample, n_cv,  bins, log):
 
     result.to_json('prediction.json')
 
-    print("writing model to {}".format(out))
-    mapper = DataFrameMapper([
-                            (list(df_train.columns), None),
-                            ('estimated_energy', None)
-                    ])
-    sklearn2pmml(rf, mapper,  out)
+    if save:
+        print("writing model to {}".format(out))
+        mapper = DataFrameMapper([
+                                (list(df_train.columns), None),
+                                ('estimated_energy', None)
+                        ])
+        sklearn2pmml(rf, mapper,  out)
 
 if __name__ == '__main__':
     main()
