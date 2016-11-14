@@ -29,7 +29,9 @@ setup(
         'click',
         'drmaa',
         'pyzmq',
+        'peewee',
         'numexpr',
+        'pyyaml',
         'pytest', # also in  conda
         # 'gridmap>=0.13.1', install from https://github.com/mackaiver/gridmap'
     ],
@@ -42,7 +44,10 @@ setup(
         'fetch_fact_runs = erna.scripts.fetch_fact_runs:main',
         'process_fact_run_list = erna.scripts.process_fact_run_list:main',
         'read_aux_files_to_sqlite = erna.scripts.read_aux_files_to_sqlite:main',
-        'facttools_executer = erna.scripts.facttools_executer:main'
+        'facttools_executer = erna.scripts.facttools_executer:main',
+        'erna_fill_database = erna.scripts.fill_database:main',
+        'erna_check_availability = erna.scripts.check_availability:main',
+        'erna_create_tables = erna.scripts.create_db:main',
     ],
   }
 )

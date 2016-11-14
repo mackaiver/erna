@@ -70,6 +70,11 @@ def collect_output(job_outputs, output_path, df_started_runs=None, **kwargs):
         total_on_time_in_seconds = df_merged.on_time.sum()
         logger.info("Effective on time: {}. Thats {} hours.".format(datetime.timedelta(seconds=total_on_time_in_seconds), total_on_time_in_seconds/3600))
 
+        difference = pd.Index(df_started_runs).difference(pd.Index(df_returned_data))
+
+        df_returned_data.total_on_time_in_seconds = total_on_time_in_seconds
+        df_returned_data.failed_jobs=difference
+
     name, extension = os.path.splitext(output_path)
     if extension not in ['.json', '.h5', '.hdf5', '.hdf' , '.csv']:
         logger.warn("Did not recognize file extension {}. Writing to JSON".format(extension))
