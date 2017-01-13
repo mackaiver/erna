@@ -1,0 +1,67 @@
+<container>
+
+  <properties url="classpath:/default/settings.properties" />
+
+  <property name="infile" value="file:src/main/resources/testDataFile.fits.gz" />
+  <property name="drsfile" value="file:src/main/resources/testDrsFile.drs.fits.gz" />
+
+  <property name="integralGainFile" value="classpath:/default/gain_sorted_20131127.csv" />
+  <property name="pixelDelayFile" value="classpath:/default/delays_lightpulser_20150217.csv" />
+
+  <property name="output_basename" value="output" />
+
+  <!-- <property name="fits_features" value="${keysForOutput}"/> -->
+  <property name="json_features" value="PhotonArrivals,PhotonArrivalsBaseLine"/>
+
+  <property name="aux_dir" value="file:src/main/resources/aux/" />
+  <service id="auxService" class="fact.auxservice.AuxFileService" auxFolder="${aux_dir}" />
+
+  <service id="calibService" class="fact.calibrationservice.ConstantCalibService" />
+
+  <stream id="fact" class="fact.io.zfits.ZFitsStream"  url="${infile}"/>
+
+  <process id="2" input="fact">
+  <!-- prevEventAndSkip: -->
+  <!-- PreviousEventInfo, Skip(no Data Trigger) -->
+  <include url="classpath:/default/data/prevEventAndSkip.xml" />
+  <!-- Output: Data -->
+
+  <!-- Calibration: -->
+  <!-- DrsCalibration, PatchJumpRemoval, RemoveSpikes,
+  DrsTimeCalibration, ArrayTimeCorrection, InterpolateBadPixel -->
+  <include url="classpath:/default/data/calibration.xml" />
+  <!-- Output: DataCalibrated -->
+
+  <!-- Extraction -->
+  <!-- BasicExtraction, RisingEdgeForPositions, RisingEdgePolynomFit, TimeOverThreshold,
+  PhotonChargeTimeOverThreshold, HandleSaturation, CorrectPixelDelays-->
+  <include url="classpath:/default/data/extraction.xml" />     
+  <!-- Output: photoncharge, arrivalTime -->   
+
+  <!-- Cleaning -->
+  <!-- SourcePosition(Cetatauri), CoreNeighborCleanTimeNeighbor-->
+  <include url="classpath:/default/data/cleaning.xml" />     
+  <!-- Output: shower -->   
+
+  <!-- pedestal parameters -->
+  <!-- WaveformFluctuation on non-cleaning pixels-->
+  <include url="classpath:/default/data/pedestalParameters.xml" />
+
+  <!-- Parameter calculation (only source independent) -->
+  <!-- ArrayMean(photoncharge,arrivalTime), ArrayStatistics(photoncharge,arrivalTime,maxSlopes,
+  arrivalTimePos,maxSlopesPos,maxAmplitudePosition,photonchargeSaturated,arrivalTimeTOT), 
+  Size, DistributionFromShower, M3Long, Length, Width, NumberOfIslands, TimeGraident,
+  Concentration, ConcentrationCore, ConcentrationAtCenterOfGravity, Leakage, TimeSpread,
+  ShowerSlope, Disp -->
+  <include url="classpath:/default/data/parameterCalc.xml" /> 
+  <!-- Output: source independent parameters -->   
+
+  <!-- Parameter calculation (only source dependent) -->
+  <!-- SourcePosition(${sourcename}), AntiSourcePosition(5), Alpha(for 6 Sources),
+  Distance(for 6 Sources), CosDeltaAlpha(for 6 Sources), Theta(for 6 Sources) -->
+  <include url="classpath:/default/data/sourceParameter.xml" /> 
+  <!-- Output: source dependent parameters -->
+
+  <fact.io.FITSWriter url="file:facttools_output/${output_basename}_level2.fits" keys="${keysForOutput}" />
+  </process>
+</container>

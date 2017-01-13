@@ -1,0 +1,23 @@
+processing_database:
+  host: fact-mysql.app.tu-dortmund.de
+  user: <user>
+  password: <password>
+  database: erna
+
+fact_database:
+  database: factdata
+  host: 129.194.168.95
+  user: <user>
+  password: <password>
+
+submitter:
+  interval: 15
+  data_directory: /gpfs1/scratch/fact/erna
+  max_queued_jobs: 200
+  logfile: /gpfs1/scratch/fact/erna/erna_submitter.log
+  location: isdc
+  mail_address: <mail_address>
+  mail_settings: a
+  port: 12700
+  host: isdc-in04
+  group: fact
