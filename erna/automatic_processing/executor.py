@@ -91,11 +91,12 @@ def main():
             socket.recv()
             sys.exit(1)
 
-        try:
-            output_file = next(iglob(os.path.join(facttools_output, '*')))
-            log.info('Copying {} to {}'.format(output_file, output_dir))
-            shutil.copy2(output_file, output_dir)
-            output_file = os.path.join(output_dir, os.path.basename(output_file))
+        output_files = []
+        try:    
+            for output_file in iglob(os.path.join(facttools_output, '*')):
+                log.info('Copying {} to {}'.format(output_file, output_dir))
+                shutil.copy2(output_file, output_dir)
+                output_files.append(os.path.join(output_dir, os.path.basename(output_file)))
             log.info('Copy done')
         except:
             log.exception('Error copying outputfile')
@@ -103,9 +104,12 @@ def main():
             socket.recv()
             sys.exit(1)
 
+    md5hashes = []
     try:
-        process = sp.run(['md5sum', output_file], check=True, stdout=sp.PIPE)
-        md5hash, _ = process.stdout.decode().split()
+        for output_file in output_files:
+            process = sp.run(['md5sum', output_file], check=True, stdout=sp.PIPE)
+            md5hash, _ = process.stdout.decode().split()
+            md5hashes.append(md5hash)
     except:
         log.exception('Error calculating md5sum')
         socket.send_pyobj({'job_id': job_id, 'status': 'failed'})
@@ -113,20 +117,22 @@ def main():
         sys.exit(1)
 
     try:
-        groupname = os.environ.get('ERNA_GROUP', None)
-        chown(output_file, username=None, groupname=groupname)
-        os.chmod(output_file, stat.S_IWUSR | stat.S_IRUSR | stat.S_IWGRP | stat.S_IRGRP)
+        for output_file in output_files:
+            groupname = os.environ.get('ERNA_GROUP', None)
+            chown(output_file, username=None, groupname=groupname)
+            os.chmod(output_file, stat.S_IWUSR | stat.S_IRUSR | stat.S_IWGRP | stat.S_IRGRP)
     except OSError:
         log.exception('Error setting file permissions')
         socket.send_pyobj({'job_id': job_id, 'status': 'failed'})
         socket.recv()
         sys.exit(1)
 
+    primary_output_file_index = min(output_files, key=len)
     socket.send_pyobj({
         'job_id': job_id,
         'status': 'success',
-        'output_file': output_file,
-        'md5hash': md5hash,
+        'output_file': output_files[primary_output_file_index],
+        'md5hash': md5hashes[primary_output_file_index],
     })
     socket.recv()
 
