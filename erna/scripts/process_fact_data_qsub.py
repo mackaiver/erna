@@ -66,7 +66,7 @@ def read_outputs_to_list(job_output_paths):
 @click.option('--log_level', type=click.Choice(['INFO', 'DEBUG', 'WARN']), help='increase output verbosity', default='INFO')
 @click.option('--port', help='The port through which to communicate with the JobMonitor', default=12856, type=int)
 @click.option('--source',  help='Name of the source to analyze. e.g Crab', default='Crab')
-@click.option('--conditions',  help='Name of the data conditions as given in datacheck_conditions.py e.g std', default='data')
+@click.option('--conditions', '-c', help='Name of the data conditions as given in datacheck_conditions.py e.g @standard or "fParameter < 42 "', default=['@standard'], multiple=True)
 @click.option('--max_delta_t', default=30,  help='Maximum time difference (minutes) allowed between drs and data files.', type=click.INT)
 @click.option('--local', default=False,is_flag=True,   help='Flag indicating whether jobs should be executed localy .')
 @click.password_option(help='password to read from the always awesome RunDB')
@@ -97,7 +97,10 @@ def main(earliest_night, latest_night, data_dir, jar, xml, aux_source, out, queu
     os.makedirs(output_directory, exist_ok=True)
 
     factdb = sqlalchemy.create_engine("mysql+pymysql://factread:{}@129.194.168.95/factdata".format(password))
-    data_conditions=dcc.conditions[conditions]
+    
+    # create the set of conditions we want to use
+    data_conditions = dcc.create_condition_set(conditions)
+    
     df_loaded = erna.load(earliest_night, latest_night, data_dir, source_name=source, timedelta_in_minutes=max_delta_t, factdb=factdb, data_conditions=data_conditions)
     df_loaded.to_hdf(out+".tmp", "loaded", mode="a")
 
