@@ -22,7 +22,7 @@ def make_jobs(jar, xml, aux_source_path, output_directory, df_mapping,  engine, 
     for num, df in df_mapping.groupby("bunch_index"):
         df=df.copy()
         df["bunch_index"] = num
-        job = Job(stream_runner.run, [jar, xml, df, aux_source_path], queue=queue, walltime=walltime, engine=engine, mem_free='{}mb'.format(vmem))
+        job = Job(stream_runner.run, [jar, xml, df, aux_source_path, '{}mb'.format(0.9*vmem)], queue=queue, walltime=walltime, engine=engine, mem_free='{}mb'.format(vmem))
         jobs.append(job)
 
     return jobs

@@ -65,17 +65,23 @@ def date_to_night_int(night):
     return 10000 * night.year + 100 * night.month + night.day
 
 
-def assemble_facttools_call(jar, xml, input_path, output_path, aux_source_path=None):
+def assemble_facttools_call(jar, xml, input_path, output_path,
+                            aux_source_path=None,
+                            max_heap_size='2014m',
+                            initial_heap_size='512m',
+                            compressed_class_space_size='64m',
+                            max_meta_size='128m'
+                            ):
     ''' Assemble the call for fact-tools with the given combinations
     of jar, xml, input_path and output_path. The db_path is optional
     for the case where a db_file is needed
     '''
     call = [
             'java',
-            '-XX:MaxHeapSize=1024m',
-            '-XX:InitialHeapSize=512m',
-            '-XX:CompressedClassSpaceSize=64m',
-            '-XX:MaxMetaspaceSize=128m',
+            '-XX:MaxHeapSize={}'.format(max_heap_size),
+            '-XX:InitialHeapSize={}'.format(initial_heap_size),
+            '-XX:CompressedClassSpaceSize={}'.format(compressed_class_space_size),
+            '-XX:MaxMetaspaceSize={}'.format(max_meta_size),
             '-XX:+UseConcMarkSweepGC',
             '-XX:+UseParNewGC',
             '-jar',

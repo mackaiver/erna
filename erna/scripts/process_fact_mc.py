@@ -47,10 +47,10 @@ def make_jobs(jar, xml, data_paths, drs_paths,
             file_name, _ = path.splitext(path.basename(output_path))
             file_name = create_filename_from_format(filename_format, file_name, num)
             out_path = path.dirname(output_path)
-            run = [jar, xml, df, path.join(out_path, file_name)]
+            run = [jar, xml, df, path.join(out_path, file_name), None, '{}mb'.format(0.9*vmem)]
             stream_runner = stream_runner_local
         else:
-            run = [jar, xml, df]
+            run = [jar, xml, df, None, '{mb}'.format(0.9*vmem)]
             stream_runner = stream_runner_std
 
         jobs.append(
